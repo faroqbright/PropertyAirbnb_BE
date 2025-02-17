@@ -69,7 +69,7 @@ router.post(
 
       const errorMessage = validateFields({ name, email, password, number });
       if (errorMessage) return res.status(400).json({ error: errorMessage });
-
+      
       const userDoc = await db.collection("users").doc(email).get();
       if (userDoc.exists)
         return res.status(400).json({ error: "User already exists" });
@@ -78,9 +78,8 @@ router.post(
 
       let cnicUrl = "";
       let ownerDocUrl = "";
-      let isActive = 0; // Default for users
+      let isActive = 0;
 
-      // CNIC is required for both users and landlords
       if (!req.files["cnic"]) {
         return res.status(400).json({ error: "CNIC image is required" });
       }
@@ -90,7 +89,6 @@ router.post(
         `${email}-${uuidv4()}`
       );
 
-      // Only upload OwnerDoc for users
       if (role === "user" && req.files["OwnerDoc"]) {
         ownerDocUrl = await uploadImageToCloudinary(
           req.files["OwnerDoc"][0].buffer,
@@ -99,7 +97,7 @@ router.post(
       }
 
       if (role === "landlord") {
-        isActive = 1; // Landlords are active immediately
+        isActive = 1;
       }
 
       await db
@@ -112,9 +110,9 @@ router.post(
           number,
           role,
           cnicUrl,
-          ownerDocUrl, // Save the OwnerDoc URL for users
+          ownerDocUrl,
           isActive,
-          isProfileComplete: role === "landlord", // True for landlords, false for users
+          isProfileComplete: role === "landlord",
         });
 
       if (role === "landlord") {
@@ -160,7 +158,7 @@ router.post("/login", async (req, res) => {
       number: user.number,
       role: user.role,
       isProfileComplete: user.isProfileComplete || false,
-      isActive: user.isActive || 0, // Add the isActive field here
+      isActive: user.isActive || 0,
     };
 
     // Include additional info only if profile is complete
@@ -174,12 +172,12 @@ router.post("/login", async (req, res) => {
       userInfo.drinkingHabit = user.drinkingHabit;
       userInfo.smokingHabit = user.smokingHabit;
       userInfo.preference = user.preference;
-      userInfo.cnicUrl = user.cnicUrl || ""; // Include CNIC URL for users
-      userInfo.ownerDocUrl = user.ownerDocUrl || ""; // Include OwnerDoc URL for users
+      userInfo.cnicUrl = user.cnicUrl || "";
+      userInfo.ownerDocUrl = user.ownerDocUrl || "";
     }
 
     if (user.role === "landlord") {
-      userInfo.cnicUrl = user.cnicUrl || ""; // CNIC URL for landlords
+      userInfo.cnicUrl = user.cnicUrl || "";
     }
 
     res.json({ token, user: userInfo });
